@@ -323,10 +323,11 @@ function setupContactGroupHeaderStuck() {
 
         const listTop = list.getBoundingClientRect().top;
         for (const header of list.querySelectorAll(".q-collapse-item > .q-collapse-item__header")) {
-            // 分组顶部已滚出列表顶部，且标题仍有部分可见（包括被下一个分组顶出的过程）。
-            // 0.5px 容差，避免小数坐标导致误判
-            const stuck = header.parentElement.getBoundingClientRect().top < listTop - 0.5
-                && header.getBoundingClientRect().bottom > listTop + 0.5;
+            // sticky 生效时标题会相对所在分组向下偏移；折叠分组只有标题，滚出顶部时不会偏移。
+            // 同时要求标题仍有部分可见（包括被下一个分组顶出的过程）。0.5px 容差，避免小数坐标导致误判
+            const headerRect = header.getBoundingClientRect();
+            const stuck = headerRect.top - header.parentElement.getBoundingClientRect().top > 0.5
+                && headerRect.bottom > listTop + 0.5;
             header.toggleAttribute(stuckAttribute, stuck);
         }
     };
