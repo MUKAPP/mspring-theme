@@ -85,6 +85,11 @@
                 }
             }
 
+            // 消息列表：顶部 8px 渐隐（同好友/群聊列表），列表自带 8px 内边距，未滚动时内容不在渐隐区
+            .recent-contact-list {
+                mask-image: linear-gradient(to bottom, transparent, #000 8px);
+            }
+
             // 折叠后没有未读置顶聊天时，去掉空列表的内边距
             .rc-pin-list--folded:not(:has(> .recent-contact-item:not(.rc-pin-item--read))) {
                 padding: 0;
