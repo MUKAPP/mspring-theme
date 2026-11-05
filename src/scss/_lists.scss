@@ -135,6 +135,28 @@
             .q-collapse-item__header {
                 background: rgb(from var(--bg_white) r g b / 0.8)
             }
+
+            // 好友/群聊列表 分组标题：未吸顶无背景，吸顶时毛玻璃（做法同折叠置顶栏）
+            .contact-list .q-collapse-item__header {
+                background-color: transparent;
+                backdrop-filter: none;
+                mix-blend-mode: normal;
+                transition:
+                    background-color 0.2s ease,
+                    backdrop-filter 0.2s ease allow-discrete,
+                    mix-blend-mode 0.2s step-end allow-discrete;
+
+                // data-msp-stuck 由 renderer/features.js 维护
+                &[data-msp-stuck] {
+                    background-color: rgb(from color-mix(in srgb, var(--msp-container), var(--bg_white)) r g b / 1);
+                    backdrop-filter: $blur-backdrop-filter-16;
+                    mix-blend-mode: multiply;
+                    transition:
+                        background-color 0.2s ease,
+                        backdrop-filter 0.2s ease allow-discrete,
+                        mix-blend-mode 0.2s step-start allow-discrete;
+                }
+            }
         }
 
         .two-col-layout__main {

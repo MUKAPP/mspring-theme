@@ -298,6 +298,93 @@ function setupPinCollapseBarStuck() {
     bindBar();
 }
 
+let contactGroupHeaderObserver = null;
+
+/**
+ * 标记好友/群聊列表的分组标题是否吸顶，供样式切换毛玻璃。
+ * 标题是 QQ 原生的 sticky top: 0；所在分组的顶部滚出列表顶部后，标题处于吸顶状态。
+ * 滚动和分组展开/折叠都会改变吸顶状态；列表会随好友/群聊切换重新挂载，因此在 DOM 变化时重新绑定。
+ */
+function setupContactGroupHeaderStuck() {
+    if (contactGroupHeaderObserver || !document.body) {
+        return;
+    }
+
+    const listSelector = ".two-col-layout__aside .contact-list";
+    const stuckAttribute = "data-msp-stuck";
+    const pendingLists = new Set();
+    const observedContents = new Set();
+    let frame = 0;
+
+    const updateList = (list) => {
+        if (!list.isConnected) {
+            return;
+        }
+
+        const listTop = list.getBoundingClientRect().top;
+        for (const header of list.querySelectorAll(".q-collapse-item > .q-collapse-item__header")) {
+            // 分组顶部已滚出列表顶部，且标题仍有部分可见（包括被下一个分组顶出的过程）。
+            // 0.5px 容差，避免小数坐标导致误判
+            const stuck = header.parentElement.getBoundingClientRect().top < listTop - 0.5
+                && header.getBoundingClientRect().bottom > listTop + 0.5;
+            header.toggleAttribute(stuckAttribute, stuck);
+        }
+    };
+
+    const scheduleUpdate = (list) => {
+        pendingLists.add(list);
+        frame ||= requestAnimationFrame(() => {
+            frame = 0;
+            for (const pendingList of pendingLists) {
+                updateList(pendingList);
+            }
+            pendingLists.clear();
+        });
+    };
+
+    // 展开/折叠分组只改变内容高度，列表不一定触发滚动
+    const resizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+            const list = entry.target.parentElement;
+            if (list) {
+                scheduleUpdate(list);
+            }
+        }
+    });
+
+    const bindLists = () => {
+        // 释放已卸载的列表，避免 ResizeObserver 持有旧节点
+        for (const content of observedContents) {
+            if (!content.isConnected) {
+                observedContents.delete(content);
+                resizeObserver.unobserve(content);
+            }
+        }
+
+        for (const list of document.querySelectorAll(listSelector)) {
+            const content = list.firstElementChild;
+            if (content && !observedContents.has(content)) {
+                observedContents.add(content);
+                resizeObserver.observe(content);
+            }
+        }
+    };
+
+    // scroll 不冒泡，在捕获阶段统一监听，避免逐个绑定会重新挂载的列表
+    document.addEventListener("scroll", (event) => {
+        if (event.target instanceof Element && event.target.matches(listSelector)) {
+            scheduleUpdate(event.target);
+        }
+    }, { capture: true, passive: true });
+
+    contactGroupHeaderObserver = new MutationObserver(bindLists);
+    contactGroupHeaderObserver.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+    bindLists();
+}
+
 async function setupThemeFeatures(settings, { log, mspring_theme, frameworkType, plugin_path, observeElement }) {
     try {
         // 判断操作系统类型
@@ -315,6 +402,7 @@ async function setupThemeFeatures(settings, { log, mspring_theme, frameworkType,
 
         setupContextSubMenuTopLayer();
         setupPinCollapseBarStuck();
+        setupContactGroupHeaderStuck();
 
         // 判断是否强制覆盖自己的气泡颜色
         if (settings.forceHostBubbleColor) {
