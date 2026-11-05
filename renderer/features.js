@@ -246,6 +246,58 @@ function setupContextSubMenuTopLayer() {
     showSubMenus(document.body);
 }
 
+let pinCollapseBarObserver = null;
+
+/**
+ * 标记折叠置顶栏是否吸底，供样式切换毛玻璃。
+ * 栏未吸底时紧贴在普通列表上方；普通列表顶部还没进入（列表底部 - 8px）时，栏处于吸底状态。
+ * 栏会随列表重新挂载，因此在 DOM 变化时重新绑定观察目标。
+ */
+function setupPinCollapseBarStuck() {
+    if (pinCollapseBarObserver || !document.body) {
+        return;
+    }
+
+    const stuckAttribute = "data-msp-stuck";
+    let currentBar = null;
+    let currentNextList = null;
+    let intersectionObserver = null;
+
+    const bindBar = () => {
+        const bar = document.querySelector(".recent-contact-list > .pin-collapse-bar");
+        const nextList = bar?.nextElementSibling ?? null;
+        if (bar === currentBar && nextList === currentNextList) {
+            return;
+        }
+
+        intersectionObserver?.disconnect();
+        intersectionObserver = null;
+        currentBar = bar;
+        currentNextList = nextList;
+
+        if (!nextList) {
+            return;
+        }
+
+        intersectionObserver = new IntersectionObserver(([entry]) => {
+            const stuck = !entry.isIntersecting && entry.boundingClientRect.top >= entry.rootBounds.bottom;
+            bar.toggleAttribute(stuckAttribute, stuck);
+        }, {
+            root: bar.parentElement,
+            // 与样式中栏的 bottom: 8px 一致
+            rootMargin: "0px 0px -8px 0px"
+        });
+        intersectionObserver.observe(nextList);
+    };
+
+    pinCollapseBarObserver = new MutationObserver(bindBar);
+    pinCollapseBarObserver.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+    bindBar();
+}
+
 async function setupThemeFeatures(settings, { log, mspring_theme, frameworkType, plugin_path, observeElement }) {
     try {
         // 判断操作系统类型
@@ -262,6 +314,7 @@ async function setupThemeFeatures(settings, { log, mspring_theme, frameworkType,
         document.documentElement.classList.add(osType);
 
         setupContextSubMenuTopLayer();
+        setupPinCollapseBarStuck();
 
         // 判断是否强制覆盖自己的气泡颜色
         if (settings.forceHostBubbleColor) {

@@ -6,7 +6,9 @@
         .two-col-layout__aside {
 
             // 主页、独立聊天界面 列表条目
-            .viewport-list .viewport-list__inner {
+            // 新版 QQ 的置顶聊天单独放在 .rc-pin-list 中，不在虚拟列表内
+            .viewport-list .viewport-list__inner,
+            .rc-pin-list {
                 display: flex;
                 flex-direction: column;
                 gap: 8px;
@@ -80,6 +82,52 @@
                         inset: 0;
                         border-radius: inherit;
                     }
+                }
+            }
+
+            // 折叠后没有未读置顶聊天时，去掉空列表的内边距
+            .rc-pin-list--folded:not(:has(> .recent-contact-item:not(.rc-pin-item--read))) {
+                padding: 0;
+            }
+
+            // 折叠置顶聊天 栏
+            .pin-collapse-bar {
+                bottom: 8px;
+                margin: 0 8px;
+                border-radius: 12px;
+                box-shadow: none;
+                // 未吸底：与置顶项背景一致。backdrop-filter 必须为 none，
+                // blur(0) 等值仍会采样背景并改变透明背景的颜色。
+                background-color: var(--msp-container);
+                // 去掉 QQ 叠加的 --overlay_top 渐变层
+                background-image: none;
+                backdrop-filter: none;
+                mix-blend-mode: normal;
+                transition:
+                    background-color 0.2s ease,
+                    backdrop-filter 0.2s ease allow-discrete,
+                    mix-blend-mode 0.2s step-end allow-discrete;
+
+                // 吸底：毛玻璃（data-msp-stuck 由 renderer/features.js 维护）。
+                // 页面背景带透明度，沿用其他位置的做法：不透明底色 + multiply 混合（同群文件 footer）。
+                // 栏本体是 QQ 的 sticky 堆叠上下文，混合只能放在本体上。
+                &[data-msp-stuck] {
+                    background-color: rgb(from color-mix(in srgb, var(--msp-container), var(--bg_white)) r g b / 1);
+                    backdrop-filter: $blur-backdrop-filter-16;
+                    mix-blend-mode: multiply;
+                    transition:
+                        background-color 0.2s ease,
+                        backdrop-filter 0.2s ease allow-discrete,
+                        mix-blend-mode 0.2s step-start allow-discrete;
+                }
+
+                &::before {
+                    border-radius: inherit;
+                }
+
+                // QQ 吸底时的背景层，会盖住本体的毛玻璃
+                .pin-collapse-bar__stuck-bg {
+                    display: none;
                 }
             }
 
