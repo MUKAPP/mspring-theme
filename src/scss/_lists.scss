@@ -136,8 +136,22 @@
                 background: rgb(from var(--bg_white) r g b / 0.8)
             }
 
-            // 好友/群聊列表 分组标题：未吸顶无背景，吸顶时毛玻璃（做法同折叠置顶栏）
+            // 好友/群聊列表：顶部 8px 渐隐，与吸顶标题上方的间距一致
+            .contact-list {
+                mask-image: linear-gradient(to bottom, transparent, #000 8px);
+
+                // 未滚动时内容避开渐隐区；首个分组展开时，标题静止位置与吸顶位置一致，不会误判为吸顶
+                > .q-collapse {
+                    padding-top: 8px;
+                }
+            }
+
+            // 好友/群聊列表 分组标题：未吸顶无背景，吸顶时悬浮毛玻璃（做法同折叠置顶栏）
             .contact-list .q-collapse-item__header {
+                // 与折叠置顶栏一致：左右留 8px 的圆角块，吸顶时距列表顶部 8px
+                top: 8px;
+                margin: 0 8px;
+                border-radius: 12px;
                 background-color: transparent;
                 backdrop-filter: none;
                 mix-blend-mode: normal;
@@ -155,6 +169,12 @@
                         background-color 0.2s ease,
                         backdrop-filter 0.2s ease allow-discrete,
                         mix-blend-mode 0.2s step-start allow-discrete;
+                }
+
+                // hover/pressed 层跟随圆角
+                &::before {
+                    inset: 0;
+                    border-radius: inherit;
                 }
             }
         }

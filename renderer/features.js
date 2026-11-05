@@ -302,7 +302,7 @@ let contactGroupHeaderObserver = null;
 
 /**
  * 标记好友/群聊列表的分组标题是否吸顶，供样式切换毛玻璃。
- * 标题是 QQ 原生的 sticky top: 0；所在分组的顶部滚出列表顶部后，标题处于吸顶状态。
+ * 标题是 QQ 原生的 sticky（主题改为 top: 8px）；所在分组的顶部滚出列表顶部后，标题处于吸顶状态。
  * 滚动和分组展开/折叠都会改变吸顶状态；列表会随好友/群聊切换重新挂载，因此在 DOM 变化时重新绑定。
  */
 function setupContactGroupHeaderStuck() {
