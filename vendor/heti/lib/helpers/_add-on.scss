@@ -14,6 +14,13 @@
         }
     }
 
+    // 原始边界空白仍留在选区/复制文本里，但不再贡献字体自身的空格宽度。
+    heti-space {
+        font-size: 0;
+        letter-spacing: 0;
+        word-spacing: 0;
+    }
+
     .heti-spacing-start {
         margin-inline-end: 0.25em;
     }

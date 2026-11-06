@@ -4,6 +4,7 @@
  *
  * 源码基于：https://github.com/sivan/heti/blob/master/js/heti-addon.js
  * 本地补丁：将 heti-adjacent 加入跳过列表，避免在聊天场景重复处理时出现多层嵌套包裹。
+ * 保留原文空白，中西文边界空白以零字号保留字符，视觉间距统一由外侧边距提供。
  */
 import Finder from 'heti-findandreplacedomtext';
 
@@ -103,24 +104,50 @@ class Heti {
         const getWrapper = function (elementName, classList, text) {
             const wrapper = document.createElement(elementName);
             wrapper.className = classList;
-            wrapper.textContent = text.trim();
+            // 保留原文空白，不能为了视觉加距而删除复制时需要的字符。
+            wrapper.textContent = text;
+            return wrapper;
+        };
+
+        const getSpacingWrapper = function (classList, portion, match) {
+            // 匹配可能跨节点；仅归零整个匹配两端的空白，英文单词之间的空格不动。
+            const start = Math.max(0, portion.indexInMatch);
+            const leadingEnd = Math.min(portion.text.length,
+                Math.max(0, match[0].length - match[0].trimStart().length - start));
+            const trailingStart = Math.max(leadingEnd,
+                Math.min(portion.text.length, match[0].trimEnd().length - start));
+            const wrapper = getWrapper('heti-spacing', classList, portion.text.slice(leadingEnd, trailingStart));
+            if (leadingEnd > 0) {
+                wrapper.prepend(getWrapper('heti-space', '', portion.text.slice(0, leadingEnd)));
+            }
+            if (trailingStart < portion.text.length) {
+                wrapper.append(getWrapper('heti-space', '', portion.text.slice(trailingStart)));
+            }
+            // 不论原文是否有空格，都只在匹配最外侧提供相同的视觉间距。
+            // start/end 类分别作用于行内末端/起端。
+            if (portion.indexInMatch > 0) {
+                wrapper.classList.remove('heti-spacing-end');
+            }
+            if (!portion.isEnd) {
+                wrapper.classList.remove('heti-spacing-start');
+            }
             return wrapper;
         };
 
         Finder(element, Object.assign({}, commonConfig, {
             find: this.REG_FULL,
-            replace: portion => getWrapper('heti-spacing', 'heti-spacing-start heti-spacing-end', portion.text),
+            replace: (portion, match) => getSpacingWrapper('heti-spacing-start heti-spacing-end', portion, match),
             offset: this.offsetWidth,
         }));
 
         Finder(element, Object.assign({}, commonConfig, {
             find: this.REG_START,
-            replace: portion => getWrapper('heti-spacing', 'heti-spacing-start', portion.text),
+            replace: (portion, match) => getSpacingWrapper('heti-spacing-start', portion, match),
         }));
 
         Finder(element, Object.assign({}, commonConfig, {
             find: this.REG_END,
-            replace: portion => getWrapper('heti-spacing', 'heti-spacing-end', portion.text),
+            replace: (portion, match) => getSpacingWrapper('heti-spacing-end', portion, match),
             offset: this.offsetWidth,
         }));
 
