@@ -17,6 +17,8 @@
     // 原始边界空白仍留在选区/复制文本里，但不再贡献字体自身的空格宽度。
     heti-space {
         font-size: 0;
+        // 零字号仍会继承正文行高并撑大行盒，行高也必须归零。
+        line-height: 0;
         letter-spacing: 0;
         word-spacing: 0;
     }
@@ -27,6 +29,16 @@
 
     .heti-spacing-end {
         margin-inline-start: 0.25em;
+
+        // 提供不进入原文的折行点，让起端边距留在上一行，英文换到行首时不再缩进。
+        // 仅在匹配的起端添加；零字号、零行高避免影响字形选择或撑大行盒。
+        &::before {
+            content: "\200b";
+            font-size: 0;
+            line-height: 0;
+            letter-spacing: 0;
+            word-spacing: 0;
+        }
     }
 
     heti-adjacent {
