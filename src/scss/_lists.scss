@@ -1,6 +1,18 @@
 /* 消息列表、联系人列表等通用列表样式 */
 @use "variables" as *;
 
+// 用长度插值渐隐范围；不继承，避免滚动时使列表子节点跟随重算此属性。
+@property --msp-list-top-fade {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 0px;
+}
+
+@keyframes msp-list-top-fade {
+    from { --msp-list-top-fade: 0px; }
+    to { --msp-list-top-fade: 8px; }
+}
+
 #app {
     .container-content {
         .two-col-layout__aside {
@@ -85,9 +97,13 @@
                 }
             }
 
-            // 消息列表：顶部 8px 渐隐（同好友/群聊列表），列表自带 8px 内边距，未滚动时内容不在渐隐区
+            // 消息列表：在顶部不渐隐（折叠置顶栏可能贴顶），前 8px 滚动内逐渐增加渐隐范围。
+            // 跟随滚动位置而非时间，不添加延迟或位移动画，减少动态效果时也保留这个透明度提示。
             .recent-contact-list {
-                mask-image: linear-gradient(to bottom, transparent, #000 8px);
+                mask-image: linear-gradient(to bottom, transparent, #000 var(--msp-list-top-fade));
+                animation: msp-list-top-fade linear both;
+                animation-timeline: scroll(self block);
+                animation-range: 0px 8px;
             }
 
             // 折叠后没有未读置顶聊天时，去掉空列表的内边距
