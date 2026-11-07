@@ -1,16 +1,10 @@
 /* 消息列表、联系人列表等通用列表样式 */
 @use "variables" as *;
 
-// 用长度插值渐隐范围；不继承，避免滚动时使列表子节点跟随重算此属性。
-@property --msp-list-top-fade {
-    syntax: "<length>";
-    inherits: false;
-    initial-value: 0px;
-}
-
+// 固定渐变形状，只移动静止外框的蒙版，不随滚动重算渐变色标。
 @keyframes msp-list-top-fade {
-    from { --msp-list-top-fade: 0px; }
-    to { --msp-list-top-fade: 8px; }
+    from { mask-position: 0 -12px; }
+    to { mask-position: 0 0; }
 }
 
 #app {
@@ -97,13 +91,32 @@
                 }
             }
 
-            // 消息列表：在顶部不渐隐（折叠置顶栏可能贴顶），前 8px 滚动内逐渐增加渐隐范围。
-            // 跟随滚动位置而非时间，不添加延迟或位移动画，减少动态效果时也保留这个透明度提示。
-            .recent-contact-list {
-                mask-image: linear-gradient(to bottom, transparent, #000 var(--msp-list-top-fade));
+            // 蒙版放在静止外框，避免滚动列表同时承担动态蒙版与文字重绘。
+            // 顶部时将渐变移出可视区（折叠置顶栏可能贴顶），随前 12px 滚动逐渐移回。
+            .list-toggler:has(> .recent-contact-list),
+            .tab-content__container:has(> .contact-list) {
+                timeline-scope: --msp-list-scroll;
+                // 透明度按 smoothstep 采样，柔化渐变两端，避免线性渐变形成明显边界。
+                mask-image: linear-gradient(to bottom,
+                    transparent 0,
+                    rgba(0, 0, 0, 0.074) 2px,
+                    rgba(0, 0, 0, 0.259) 4px,
+                    rgba(0, 0, 0, 0.5) 6px,
+                    rgba(0, 0, 0, 0.741) 8px,
+                    rgba(0, 0, 0, 0.926) 10px,
+                    #000 12px);
+                // 向上移 12px 时，蒙版仍覆盖到底部。
+                mask-size: 100% calc(100% + 12px);
+                mask-repeat: no-repeat;
+                mask-position: 0 -12px;
                 animation: msp-list-top-fade linear both;
-                animation-timeline: scroll(self block);
-                animation-range: 0px 8px;
+                animation-timeline: --msp-list-scroll;
+                animation-range: 0px 12px;
+            }
+
+            .recent-contact-list,
+            .contact-list {
+                scroll-timeline: --msp-list-scroll block;
             }
 
             // 折叠后没有未读置顶聊天时，去掉空列表的内边距
@@ -157,20 +170,18 @@
                 background: rgb(from var(--bg_white) r g b / 0.8)
             }
 
-            // 好友/群聊列表：顶部 8px 渐隐，与吸顶标题上方的间距一致
+            // 好友/群聊列表：内容与吸顶标题一起避开顶部 12px 渐隐区。
             .contact-list {
-                mask-image: linear-gradient(to bottom, transparent, #000 8px);
-
-                // 未滚动时内容避开渐隐区；首个分组展开时，标题静止位置与吸顶位置一致，不会误判为吸顶
+                // 首个分组展开时，标题静止位置与吸顶位置一致，不会误判为吸顶。
                 > .q-collapse {
-                    padding-top: 8px;
+                    padding-top: 12px;
                 }
             }
 
             // 好友/群聊列表 分组标题：未吸顶无背景，吸顶时悬浮毛玻璃（做法同折叠置顶栏）
             .contact-list .q-collapse-item__header {
-                // 与折叠置顶栏一致：左右留 8px 的圆角块，吸顶时距列表顶部 8px
-                top: 8px;
+                // 左右留 8px 的圆角块，吸顶时距列表顶部 12px，避开渐隐区。
+                top: 12px;
                 margin: 0 8px;
                 border-radius: 12px;
                 background-color: transparent;
