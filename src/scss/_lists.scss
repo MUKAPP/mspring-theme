@@ -95,6 +95,8 @@
             // 顶部时将渐变移出可视区（折叠置顶栏可能贴顶），随前 12px 滚动逐渐移回。
             .list-toggler:has(> .recent-contact-list),
             .tab-content__container:has(> .contact-list) {
+                // 隔离外框绘制，避免旧版 Chromium 将蒙版画成黑块（#124）。
+                contain: paint;
                 timeline-scope: --msp-list-scroll;
                 // 透明度按 smoothstep 采样，柔化渐变两端，避免线性渐变形成明显边界。
                 mask-image: linear-gradient(to bottom,
